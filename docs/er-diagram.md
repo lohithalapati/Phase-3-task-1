@@ -16,4 +16,5 @@ Organization (1) —— (N) AnalyticsEvent
 ---
 
 Tenant Rule:
-Every major entity except Permission includes organization_id.
+Every major entity except Permission includes organization_id
+.
