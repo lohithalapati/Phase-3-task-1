@@ -1,52 +1,18 @@
-﻿import { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-
-interface GlassProps {
-  children: ReactNode;
-  className?: string;
-  interactive?: boolean;
-  variant?: 'card' | 'surface' | 'overlay';
-  elevation?: 'none' | 'sm' | 'md' | 'lg';
-}
-
-export function Glass({
-  children,
-  className,
-  interactive = false,
-  variant = 'card',
-  elevation = 'md',
-}: GlassProps) {
-  const baseStyles =
-    'backdrop-blur-lg rounded-[20px] border border-surface-border transition-all duration-300';
-
-  const variants = {
-    card: 'bg-surface-card',
-    surface: 'bg-surface-glass',
-    overlay: 'bg-surface-glass/95',
-  };
-
-  const elevations = {
-    none: 'shadow-none',
-    sm: 'shadow-lg',
-    md: 'shadow-xl',
-    lg: 'shadow-2xl',
-  };
-
-  const interactiveStyles = interactive
-    ? 'cursor-pointer hover:bg-surface-hover hover:border-primary-cyan/50 hover:shadow-glow hover:scale-[1.02] active:scale-[0.98]'
-    : '';
-
+/**
+ * @purpose A reusable Glassmorphism surface component.
+ * @props children: ReactNode, className?: string, interactive?: boolean
+ * @variants interactive: boolean - Adds premium hover language (elevation, glow, border brighten).
+ * @accessibility_notes Container only. Content accessibility is the responsibility of the children.
+ * @usage <Glass interactive><Your Content /></Glass>
+ */
+interface GlassProps { children: ReactNode; className?: string; interactive?: boolean; }
+export function Glass({ children, className, interactive = false }: GlassProps) {
   return (
-    <div
-      className={cn(
-        baseStyles,
-        variants[variant],
-        elevations[elevation],
-        interactiveStyles,
-        className
-      )}
-    >
-      {children}
+    <div className={cn('relative rounded-xl border border-surface-border bg-surface-card backdrop-blur-xl transition-all duration-medium', interactive && 'hover:scale-[1.02] hover:shadow-glow hover:border-primary-neural/50', className)}>
+      <div className='absolute -inset-px rounded-xl opacity-20 pointer-events-none' style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%, rgba(255,255,255,0.0) 100%)' }} />
+      <div className='relative'>{children}</div>
     </div>
   );
 }

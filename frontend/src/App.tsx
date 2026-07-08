@@ -1,12 +1,16 @@
-﻿import { GlobalLayout } from '@/components/layout/GlobalLayout';
-import DesignSystemShowcase from '@/pages/DesignSystemShowcase';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import DesignSystemShowcase from './pages/DesignSystemShowcase';
+import { GlobalBackground } from './components/layout/GlobalBackground';
+import { Toaster } from './components/feedback/Toaster';
 
-function App() {
+export default function App() {
   return (
-    <GlobalLayout>
-      <DesignSystemShowcase />
-    </GlobalLayout>
+    <Router>
+      <GlobalBackground />
+      <Toaster />
+      <Routes>
+        <Route path='/' element={<DesignSystemShowcase />} />
+      </Routes>
+    </Router>
   );
 }
-
-export default App;
