@@ -1,1 +1,10 @@
-/** @purpose A badge indicating an AI process is running. @notes Includes a brand-consistent pulse animation. */ export function AIGeneratingBadge() { return <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-neural/10 border border-primary-neural/30"><div className="relative w-2 h-2"><div className="absolute inset-0 rounded-full bg-primary-neural animate-pulse" /></div><span className="text-xs font-semibold text-primary-neural">AI Generating...</span></div> }
+export function AIGeneratingBadge() {
+  return (
+    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-neural/10 border border-primary-neural/30">
+      <div className="relative w-2 h-2">
+        <div className="absolute inset-0 rounded-full bg-primary-neural animate-pulse" />
+      </div>
+      <span className="text-xs font-semibold text-primary-neural">AI Generating...</span>
+    </div>
+  );
+}

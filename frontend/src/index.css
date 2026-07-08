@@ -4,23 +4,25 @@
 
 @layer base {
   body {
-    @apply bg-[#030712] text-slate-50 antialiased min-h-screen overflow-x-hidden;
+    @apply bg-background-primary text-text-primary font-sans antialiased;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  #root {
+    min-height: 100vh;
   }
 }
 
-@keyframes blob {
-  0% { transform: translate(0px, 0px) scale(1); }
-  33% { transform: translate(30px, -50px) scale(1.1); }
-  66% { transform: translate(-20px, 20px) scale(0.9); }
-  100% { transform: translate(0px, 0px) scale(1); }
+@layer components {
+  .glass-border {
+    @apply border border-surface-border;
+  }
 }
 
-.animate-blob {
-  animation: blob 7s infinite;
-}
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-.animation-delay-4000 {
-  animation-delay: 4s;
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
 }

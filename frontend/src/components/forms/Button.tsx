@@ -2,14 +2,6 @@ import { forwardRef, ButtonHTMLAttributes } from 'react';
 import { cva, VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-/**
- * @purpose The primary button component for all user actions.
- * @props Extends standard button attributes.
- * @variants primary: Main CTA. secondary: Alternative action.
- * @sizes sm, md.
- * @accessibility_notes Automatically handles focus-visible state with a ring.
- * @usage <Button variant='primary' size='md'>Click Me</Button>
- */
 const buttonVariants = cva(
   'relative inline-flex items-center justify-center gap-2 font-semibold transition-all duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-neural focus-visible:ring-offset-2 focus-visible:ring-offset-background-primary disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden active:scale-[0.98]',
   {
