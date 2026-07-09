@@ -12,11 +12,10 @@ export default {
         text: { primary: '#E2E8F0', secondary: '#CBD5E1', muted: '#94A3B8' },
       },
       fontFamily: {
-        serif: ['Playfair Display', 'serif'],
-        sans: ['Inter', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['Menlo', 'Monaco', 'Courier New', 'monospace'],
       },
-      borderRadius: { DEFAULT: '0.5rem', lg: '0.75rem', xl: '1.25rem' /* 20px */ },
+      borderRadius: { DEFAULT: '0.5rem', lg: '0.75rem', xl: '1.25rem' },
       boxShadow: {
         glass: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
         glow: '0 0 20px rgba(37, 99, 235, 0.5)',
@@ -24,15 +23,9 @@ export default {
       backdropBlur: { xl: '16px' },
       transitionDuration: { fast: '150ms', medium: '250ms', slow: '400ms' },
       animation: {
-        aurora: 'aurora 80s ease-in-out infinite',
-        float: 'float 12s ease-in-out infinite',
-        pulse: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         ripple: 'ripple 0.6s ease-out',
       },
       keyframes: {
-        aurora: { '0%': { backgroundPosition: '0% 50%' }, '50%': { backgroundPosition: '100% 50%' }, '100%': { backgroundPosition: '0% 50%' } },
-        float: { '0%, 100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-20px)' } },
-        pulse: { '50%': { opacity: '0.6' } },
         ripple: { to: { transform: 'scale(4)', opacity: '0' } },
       },
     },

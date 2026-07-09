@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /.env
+
+Sitemap: https://neuralhandoff.com/sitemap.xml
