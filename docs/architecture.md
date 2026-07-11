@@ -1,72 +1,36 @@
-# NeuralHandoff — System Architecture
+﻿# NeuralHandoff V5 — Engineering & Architecture Guidelines
 
-## 1. High-Level Overview
+This document outlines the structural rules and conventions established in Task 1. Adherence is mandatory for all subsequent tasks to maintain scalability and prevent code duplication.
 
-NeuralHandoff is a multi-tenant Enterprise Knowledge Intelligence Platform.
+## 1. Directory Structure
 
-Architecture Flow:
+- **`src/features`**: Contains self-contained business domains (e.g., `auth`, `dashboard`). Each feature has its own `api`, `components`, `hooks`, and `types`.
+- **`src/shared`**: Contains strictly reusable, business-agnostic logic.
+  - `components`: Reusable UI elements (Forms, Feedback Modals).
+  - `hooks`: Global custom hooks (e.g., `useLocalStorage`).
+  - `layouts`: Global page layouts (e.g., `DashboardLayout`).
+  - `types`: Global TypeScript interfaces (`ApiResponse`, `UserSession`).
+  - `utils`: Global utility functions (`formatCurrency`, `cn`).
+- **`src/providers`**: Global React Context providers (`AppProvider`, `ErrorBoundary`).
+- **`src/config`**: Application configuration (`env.ts`, `features.ts`).
+- **`src/assets`**: Static assets (images, fonts).
+- **`docs`**: Project documentation, including this file.
 
-Frontend (React + Vite)
-        ↓
-Backend API (FastAPI)
-        ↓
-PostgreSQL (Primary Database + pgvector)
-        ↓
-Redis (Caching + Background Jobs)
-        ↓
-Object Storage (S3-compatible)
+## 2. Path Aliases
 
----
+Use path aliases to avoid deep relative imports (`../../..`).
 
-## 2. Architectural Principles
+- `@/features/*`: Access feature modules.
+- `@/shared/*`: Access shared modules.
+- `@/providers/*`: Access providers.
+- `@/config/*`: Access configuration.
 
-- Multi-tenant by design
-- Clear separation of concerns
-- Service-layer driven backend
-- Environment-based configuration
-- AI provider abstraction layer
-- Scalable and container-ready
+## 3. Naming Conventions
 
----
+- **Components**: PascalCase (`UserProfile.tsx`)
+- **Hooks**: camelCase with `use` prefix (`useAuth.ts`)
+- **Utilities/Types**: camelCase/PascalCase (`format.ts`, `index.ts`)
 
-## 3. Backend Layers
+## 4. No Duplication Rule
 
-### API Layer
-- Route definitions
-- Request validation
-- Response formatting
-
-### Service Layer
-- Business logic
-- Permission enforcement
-- Orchestration
-
-### Data Layer
-- SQLAlchemy models
-- Repository access
-- Database session management
-
----
-
-## 4. Multi-Tenant Enforcement
-
-Every tenant-scoped entity includes:
-
-organization_id (indexed)
-
-Tenant isolation enforced at:
-- Query level
-- Service layer
-- Permission layer
-
----
-
-## 5. Future AI Layer
-
-AI Provider abstraction:
-
-- OpenAI Provider
-- Ollama Provider
-- Future LLM integrations
-
-Switchable via environment variable.
+Before creating a new utility or component, check the `/shared` directory first. Do not write duplicate logic.
