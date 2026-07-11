@@ -1,5 +1,5 @@
 ﻿{
-  "compilerOptions": {
+  "compilerOptions": { "types": ["vite/client"],
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
@@ -21,7 +21,6 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Path Aliasing */
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@config/*": ["./src/config/*"],
@@ -38,3 +37,5 @@
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
+
+
