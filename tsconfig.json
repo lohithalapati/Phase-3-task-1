@@ -1,5 +1,5 @@
-﻿{
-  "compilerOptions": { "types": ["vite/client"], "types": ["vite/client"],
+{
+  "compilerOptions": {
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
@@ -20,6 +20,9 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
+    /* Inject Compiler Types */
+    "types": ["vite/client"],
+
     /* Path Aliasing */
     "paths": {
       "@/*": ["./src/*"],
@@ -34,8 +37,5 @@
       "@types/*": ["./src/shared/types/*"]
     }
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src", "src/vite-env.d.ts"]
 }
-
-
