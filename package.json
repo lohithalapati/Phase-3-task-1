@@ -5,5 +5,8 @@
     "esbuild": "^0.28.1",
     "typescript": "^7.0.2",
     "vite": "^8.1.4"
+  },
+  "dependencies": {
+    "react-router-dom": "^7.18.1"
   }
 }
