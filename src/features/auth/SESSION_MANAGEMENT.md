@@ -5,7 +5,7 @@ The workstation session interface implements dynamic inactivity auditing, tab sy
 ## Session Lifecycles
 - **Maximum Lease Runtime**: 15 minutes of user inactivity (`SESSION_CONFIG.IDLE_TIMEOUT_MS`).
 - **Activity Monitor Events**: `mousedown`, `keydown`, `scroll`, `touchstart`.
-- **Multi-Tab Synchronization**: Managed through real-time `BroadcastChannel` signals (`auth_session_sync_channel`) mapping `LOGOUT` and `SESSION_EXPIRED` signals instantly.
+- **Multi-Tab Synchronization**: Managed through real-time `BroadcastChannel` signals (`auth_session_sync_channel`) mapping `LOGOUT` and `SESSION_EXPIRED` signals.
 [ Active Workstation Tab A ] ───(Broadcast Signal)───> [ Workstation Tab B ]
 │ │
 Forced Inactivity Instantly Aligned
