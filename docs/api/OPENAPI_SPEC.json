@@ -1,49 +1,43 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "NeuralHandoff V5 Enterprise Core Core Network Interfaces",
+    "title": "NeuralHandoff V5 Enterprise Core Networking API Specifications",
     "version": "5.0.0",
-    "description": "Standardized core specifications detailing endpoint parameters, models, headers, and authentication rotations."
+    "description": "Contracts, models, and header validations for the NeuralHandoff transport architecture."
   },
   "servers": [
     {
       "url": "https://api.neuralhandoff.com/v1",
-      "description": "Enterprise Core Edge Gateway"
+      "description": "Enterprise API Gateway Core"
     }
   ],
   "paths": {
-    "/auth/refresh-token": {
+    "/auth/login": {
       "post": {
-        "summary": "Rotate cryptographic access lease",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "refreshToken": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
+        "summary": "Authenticate user credentials",
         "responses": {
           "200": {
-            "description": "Tokens successfully rotated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "accessToken": { "type": "string" },
-                    "refreshToken": { "type": "string" }
-                  }
-                }
-              }
-            }
+            "description": "User successfully logged in"
+          }
+        }
+      }
+    },
+    "/auth/refresh-token": {
+      "post": {
+        "summary": "Silent lease rotation",
+        "responses": {
+          "200": {
+            "description": "JWT tokens rotated"
+          }
+        }
+      }
+    },
+    "/projects": {
+      "get": {
+        "summary": "Retrieve paginated project schemas",
+        "responses": {
+          "200": {
+            "description": "Projects successfully fetched"
           }
         }
       }
