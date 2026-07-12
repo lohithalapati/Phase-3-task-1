@@ -29,7 +29,7 @@ export const LoginForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =>
       await login(email, password);
       onSuccess();
     } catch {
-      // Handled by Context State Error
+      // Handled by context state error
     }
   };
 
