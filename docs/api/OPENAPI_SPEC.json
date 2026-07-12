@@ -1,0 +1,52 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "NeuralHandoff V5 Enterprise Core Core Network Interfaces",
+    "version": "5.0.0",
+    "description": "Standardized core specifications detailing endpoint parameters, models, headers, and authentication rotations."
+  },
+  "servers": [
+    {
+      "url": "https://api.neuralhandoff.com/v1",
+      "description": "Enterprise Core Edge Gateway"
+    }
+  ],
+  "paths": {
+    "/auth/refresh-token": {
+      "post": {
+        "summary": "Rotate cryptographic access lease",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens successfully rotated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": { "type": "string" },
+                    "refreshToken": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

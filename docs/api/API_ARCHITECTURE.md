@@ -1,34 +1,21 @@
-# NeuralHandoff V5 Networking & Core API Architecture
+# NeuralHandoff V5 API Lifecycles
 
-## Topological Overview
-                  +-----------------------------+
-                  |       UI React Hooks        |
-                  |   useQuery | useMutation    |
-                  +--------------+--------------+
-                                 |
-                                 v
-                  +-----------------------------+
-                  |     HttpClient Wrapper      |
-                  | (Serializer / Blob Handler) |
-                  +--------------+--------------+
-                                 |
-                                 v
-                  +-----------------------------+
-                  |    Axios Core Singleton     |
-                  |   (Interceptor Pipeline)    |
-                  +--------------+--------------+
-                                 |
-     +---------------------------+---------------------------+
-     |                                                       |
-     v                                                       v
-+------------------+ +------------------+
-| Mock Engine | --[Mock Mode: Enabled]---> | Live Edge Gateway|
-| (Interceptors) | | (Cloudflare ALB) |
-+------------------+ +------------------+
+## Interactive Multi-Layer Telemetry Channels
+ [Outbound Query] => [Deduplication Matcher] => [Active Queue check]
+                             |
+                      (Has collision)
+                             |
+             [Trigger Active Controller.abort()]
 
-## Architectural Design Principles
-
-The API layer is modeled on clear operational decoupling constraints:
-1. **Zero External Mutation Leakage:** React components interact strictly with custom wrappers; raw endpoints, libraries, and structures are encapsulated inside local packages.
-2. **Deterministic Context Binding:** Dynamic Correlation IDs link with trace spans to trace individual server errors back to specific component mounts.
-3. **Resilient Connection Pooling:** Integrates retry schedules with exponential backing policies and jitter margins to manage server rate limiting.
+## Resilient Interceptor Execution Pipeline
+[Axios Call]
+|
+v
+[Request Interceptor] ======> [Inject unique Correlation/Trace IDs]
+|
+v
+[Live Gateway Response]
+|
+v
+[Response Interceptor] =====> [Map to Domain Error Hierarchy]
+[Increment Metrics Tracker]

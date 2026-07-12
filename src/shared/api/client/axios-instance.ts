@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosRequ
 import { envConfig } from '../config/env.config';
 import { ENDPOINT_REGISTRY } from '../config/endpoints';
 import { logger } from '../utils/logger';
+import { metricsCollector } from '../utils/metrics';
 import { MockAdapter } from '../mocks/mock-adapter';
 import {
   ApiError,
@@ -63,6 +64,7 @@ const processFailedQueue = (error: unknown, token: string | null = null) => {
 
 axiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    metricsCollector.trackRequest();
     const policy = envConfig.getPolicy();
     const traceId = `trc_${Math.random().toString(36).substring(2, 10)}`;
     const correlationId = `corr_${Math.random().toString(36).substring(2, 10)}`;
@@ -116,6 +118,7 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error: AxiosError) => {
+    metricsCollector.trackFailure();
     return Promise.reject(error);
   }
 );
@@ -127,8 +130,9 @@ axiosInstance.interceptors.response.use(
     activeRequests.delete(signature);
 
     const startTimeStr = config.headers['x-request-timestamp'] as string;
+    let durationMs = 0;
     if (startTimeStr) {
-      const durationMs = Date.now() - new Date(startTimeStr).getTime();
+      durationMs = Date.now() - new Date(startTimeStr).getTime();
       logger.logMetric({
         url: config.url || '',
         method: config.method || 'get',
@@ -140,16 +144,21 @@ axiosInstance.interceptors.response.use(
       }
     }
 
+    metricsCollector.trackSuccess(durationMs);
     return response;
   },
   async (error: unknown) => {
     const mockError = error as { isMock?: boolean; response: AxiosResponse; config: InternalAxiosRequestConfig } | null | undefined;
     if (mockError && mockError.isMock) {
+      const startTimeStr = mockError.config.headers['x-request-timestamp'] as string;
+      const durationMs = startTimeStr ? Date.now() - new Date(startTimeStr).getTime() : 0;
+      metricsCollector.trackSuccess(durationMs);
       return mockError.response;
     }
 
     if (axios.isCancel(error)) {
       logger.debug(`Request gracefully cancelled.`);
+      metricsCollector.trackFailure();
       return Promise.reject(error);
     }
 
@@ -172,6 +181,11 @@ axiosInstance.interceptors.response.use(
         });
       }
 
+      // Check for Allowed Retry Status Codes (ONLY 5xx transient server warnings)
+      const allowedRetryStatuses = [500, 502, 503, 504];
+      const isTransientError = allowedRetryStatuses.includes(response.status);
+
+      // Silent Concurrent Auth Lease Refresh Queue Flow
       if (response.status === 401 && config && config.url !== ENDPOINT_REGISTRY.auth.refresh) {
         if (isRefreshing) {
           return new Promise((resolve, reject) => {
@@ -186,6 +200,7 @@ axiosInstance.interceptors.response.use(
         }
 
         isRefreshing = true;
+        metricsCollector.trackRefresh();
         const refreshToken = localStorage.getItem('refresh_token');
 
         if (refreshToken) {
@@ -215,16 +230,19 @@ axiosInstance.interceptors.response.use(
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
             window.dispatchEvent(new Event('auth:unauthorized'));
+            metricsCollector.trackFailure();
             return Promise.reject(new AuthenticationError('Lease validation expired. Redirecting to credentials portal.'));
           }
         }
       }
 
+      // Explicit Retry Strategy execution (No retries on 400/401 validation or authentication errors)
       const retryPolicy = envConfig.getPolicy();
-      if (config && response.status >= 500) {
+      if (config && isTransientError) {
         config._retryCount = config._retryCount ?? 0;
         if (config._retryCount < retryPolicy.retryLimit) {
           config._retryCount++;
+          metricsCollector.trackRetry();
           const delay = config._retryCount * retryPolicy.retryDelayFactor;
           logger.warn(`Server side warning: ${response.status}. Initiating retry schedule: Attempt ${config._retryCount} in ${delay}ms`);
           await new Promise((resolve) => setTimeout(resolve, delay));
@@ -233,6 +251,7 @@ axiosInstance.interceptors.response.use(
       }
     }
 
+    metricsCollector.trackFailure();
     const transformedError = transformAxiosError(axiosError);
     logger.error(`Resolved Domain Error Execution Path: ${transformedError.message}`, transformedError);
     return Promise.reject(transformedError);
