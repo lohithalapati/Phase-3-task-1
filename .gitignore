@@ -18,3 +18,10 @@ Thumbs.db
 # IDE
 .vscode/*
 !.vscode/extensions.json
+
+# ------------------------------------------------------------------------------
+# Testing Coverage Output (Staff-Engineer Sanitized Rule)
+# ------------------------------------------------------------------------------
+coverage/
+coverage.info
+*.lcov

@@ -1,0 +1,6 @@
+# Centralized repository ownership mapping
+# Locks down review responsibilities for critical directory patterns
+
+*                       @lohithalapati
+/src/shared/api/        @lohithalapati
+/.github/workflows/    @lohithalapati
