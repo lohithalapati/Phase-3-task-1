@@ -239,7 +239,7 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-function transformAxiosError(error: AxiosError): ApiError {
+export function transformAxiosError(error: AxiosError): ApiError {
   const url = error.config?.url;
   const status = error.response?.status;
   const statusText = error.response?.statusText;
