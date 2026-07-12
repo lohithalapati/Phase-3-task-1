@@ -1,3 +1,5 @@
+declare const process: any;
+
 export type AppEnvironment = 'development' | 'test' | 'qa' | 'staging' | 'production';
 
 export interface EnvironmentPolicy {
