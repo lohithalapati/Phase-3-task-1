@@ -32,7 +32,7 @@ export function isTokenExpired(token: string): boolean {
   const claims = parseJwt(token);
   if (!claims) return true;
   
-  // Buffering the expiration boundary check by 10 seconds to satisfy network latency
+  // Buffering the expiration check by 10 seconds to satisfy network latency
   const currentTime = Math.floor(Date.now() / 1000);
   return claims.exp < currentTime + 10;
 }
