@@ -56,3 +56,5 @@ export * from './pages/SessionExpiredPage';
 export * from './pages/UnauthorizedPage';
 export * from './pages/ForbiddenPage';
 export * from './pages/LandingAuthPage';
+
+export * from './pages/AuthSandbox';
