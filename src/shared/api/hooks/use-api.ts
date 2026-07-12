@@ -10,9 +10,9 @@ export interface HookOptions {
 }
 
 export interface MutationOptions<T, R> {
-  onSuccess?: (data: T) => void;
+  onSuccess?: (data: T, variables?: R) => void;
   onError?: (error: ApiError) => void;
-  onSettled?: (data?: T, error?: ApiError) => void;
+  onSettled?: (data?: T, error?: ApiError, variables?: R) => void;
 }
 
 export function useApi() {
@@ -111,8 +111,8 @@ export function useMutation<T, R = unknown>(
         }
 
         const data = result.data;
-        mutationOpts?.onSuccess?.(data);
-        mutationOpts?.onSettled?.(data, undefined);
+        mutationOpts?.onSuccess?.(data, payload);
+        mutationOpts?.onSettled?.(data, undefined, payload);
         return data;
       } catch (err) {
         const apiErr =
@@ -121,7 +121,7 @@ export function useMutation<T, R = unknown>(
             : new ApiError('An error occurred executing mutation.', { rawError: err });
         setError(apiErr);
         mutationOpts?.onError?.(apiErr);
-        mutationOpts?.onSettled?.(undefined, apiErr);
+        mutationOpts?.onSettled?.(undefined, apiErr, payload);
         throw apiErr;
       } finally {
         setLoading(false);

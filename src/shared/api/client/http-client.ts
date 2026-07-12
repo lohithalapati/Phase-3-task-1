@@ -1,4 +1,4 @@
-import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig, AxiosProgressEvent } from 'axios';
 import { axiosInstance } from './axios-instance';
 import { ApiResponse, ApiPaginatedResponse } from '../models/api.models';
 
@@ -64,7 +64,7 @@ export class HttpClient {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      onUploadProgress: (progressEvent) => {
+      onUploadProgress: (progressEvent: AxiosProgressEvent) => {
         if (progressEvent.total && onProgress) {
           const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           onProgress(progress);
@@ -81,7 +81,7 @@ export class HttpClient {
     const response = await axiosInstance.get<Blob>(url, {
       ...config,
       responseType: 'blob',
-      onDownloadProgress: (progressEvent) => {
+      onDownloadProgress: (progressEvent: AxiosProgressEvent) => {
         if (progressEvent.total && onProgress) {
           const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           onProgress(progress);

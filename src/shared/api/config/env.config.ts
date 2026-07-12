@@ -1,3 +1,11 @@
+declare const process: {
+  env: {
+    NODE_ENV?: string;
+    REACT_APP_ENV?: string;
+    [key: string]: string | undefined;
+  };
+};
+
 export type AppEnvironment = 'development' | 'test' | 'qa' | 'staging' | 'production';
 
 export interface EnvironmentPolicy {

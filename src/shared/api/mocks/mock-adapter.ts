@@ -24,6 +24,10 @@ export class MockAdapter {
     const correlationId = `corr_${Math.random().toString(36).substring(2, 10)}`;
     const timestamp = new Date().toISOString();
 
+    const _method = method.toUpperCase();
+    const _payload = data ? JSON.stringify(data) : 'empty';
+    console.debug(`[MockAdapter] ${_method} Request Matched for ${cleanUrl} with Payload: ${_payload}`);
+
     const buildEnvelope = (payload: unknown) => ({
       data: payload,
       meta: { timestamp, traceId, correlationId }

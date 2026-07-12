@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { envConfig } from '../config/env.config';
 import { ENDPOINT_REGISTRY } from '../config/endpoints';
 import { logger } from '../utils/logger';
@@ -121,7 +121,7 @@ axiosInstance.interceptors.request.use(
 );
 
 axiosInstance.interceptors.response.use(
-  (response) => {
+  (response: AxiosResponse) => {
     const { config } = response;
     const signature = generateRequestSignature(config);
     activeRequests.delete(signature);
@@ -143,7 +143,7 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error: unknown) => {
-    const mockError = error as { isMock?: boolean; response: { status: number; data: unknown }; config: InternalAxiosRequestConfig } | null | undefined;
+    const mockError = error as { isMock?: boolean; response: AxiosResponse; config: InternalAxiosRequestConfig } | null | undefined;
     if (mockError && mockError.isMock) {
       return mockError.response;
     }
