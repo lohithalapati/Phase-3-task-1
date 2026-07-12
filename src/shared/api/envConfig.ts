@@ -5,7 +5,8 @@ export interface Policy {
 
 class EnvConfig {
   getEnvironment(): string {
-    return process.env.NODE_ENV || 'development';
+    const globalProcess = (globalThis as any).process;
+    return (globalProcess?.env?.NODE_ENV) || 'development';
   }
 
   getPolicy(): Policy {

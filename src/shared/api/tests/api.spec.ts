@@ -58,7 +58,7 @@ describe('Platinum API Network Layer Tests', () => {
       } as any;
       const result = transformAxiosError(errorPayload);
       expect(result).toBeInstanceOf(ValidationError);
-      expect(result.status).toBe(400);
+      expect((result as ValidationError).status).toBe(400);
       expect((result as ValidationError).validationErrors?.email).toContain('Email is invalid');
     });
 
