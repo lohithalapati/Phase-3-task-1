@@ -204,7 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         await AuthService.logout(state.session.id);
       } catch {
-        // Fallback cleanup
+        // Fallback cleanup execution on error
       }
     }
     handleLogoutCleanup();
