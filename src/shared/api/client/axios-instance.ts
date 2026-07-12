@@ -143,8 +143,8 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error: unknown) => {
-    const mockError = error as { isMock?: boolean; response: { status: number; data: unknown }; config: InternalAxiosRequestConfig };
-    if (mockError?.isMock) {
+    const mockError = error as { isMock?: boolean; response: { status: number; data: unknown }; config: InternalAxiosRequestConfig } | null | undefined;
+    if (mockError && mockError.isMock) {
       return mockError.response;
     }
 

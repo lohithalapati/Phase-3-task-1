@@ -5,10 +5,7 @@ export class BaseError extends Error {
     super(message);
     this.name = this.constructor.name;
     this.timestamp = new Date().toISOString();
-    Object.setPrototypeOf(this, new Target().constructor.prototype);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 }
 
@@ -88,5 +85,3 @@ export class UnknownError extends ApiError {
     super(message, context);
   }
 }
-
-class Target {}

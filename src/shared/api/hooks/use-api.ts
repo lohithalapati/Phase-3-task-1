@@ -206,6 +206,9 @@ export function useDownload(url: string) {
 
 export function usePagination<T>(url: string, initialRequest: PageRequest = { page: 1, limit: 10 }) {
   const [pageParams, setPageParams] = useState<PageRequest>(initialRequest);
+  const [data, setData] = useState<T[] | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<ApiError | null>(null);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [totalCount, setTotalCount] = useState<number>(0);
 
@@ -225,11 +228,28 @@ export function usePagination<T>(url: string, initialRequest: PageRequest = { pa
     return configParams;
   }, []);
 
-  const { data, loading, error, execute } = useQuery<T[]>(
-    url,
-    { params: buildParams(pageParams) },
-    { immediate: true }
-  );
+  const execute = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await httpClient.getPaginated<T>(url, { params: buildParams(pageParams) });
+      setData(response.data);
+      setTotalPages(response.pagination.totalPages);
+      setTotalCount(response.pagination.totalCount);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err);
+      } else {
+        setError(new ApiError('Pagination query failed.', { rawError: err }));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [url, pageParams, buildParams]);
+
+  useEffect(() => {
+    execute();
+  }, [execute]);
 
   const updatePage = useCallback((newPage: number) => {
     setPageParams((prev) => ({ ...prev, page: newPage }));
