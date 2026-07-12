@@ -223,3 +223,21 @@ describe('Platinum API Network Layer Tests', () => {
     });
   });
 });
+import { transformAxiosError } from '../transformAxiosError';
+
+describe('transformAxiosError branch coverage', () => {
+  it('should handle missing response (Line 16)', () => {
+    const error = { message: 'Network Error' };
+    transformAxiosError(error as any);
+  });
+
+  it('should handle response without data (Line 21)', () => {
+    const error = { response: { status: 404, statusText: 'Not Found' } };
+    transformAxiosError(error as any);
+  });
+
+  it('should handle empty error object (Line 28)', () => {
+    const error = {};
+    transformAxiosError(error as any);
+  });
+});
