@@ -1,11 +1,3 @@
-declare const process: {
-  env: {
-    NODE_ENV?: string;
-    REACT_APP_ENV?: string;
-    [key: string]: string | undefined;
-  };
-};
-
 export type AppEnvironment = 'development' | 'test' | 'qa' | 'staging' | 'production';
 
 export interface EnvironmentPolicy {
@@ -70,14 +62,38 @@ class EnvironmentResolver {
   private currentEnv: AppEnvironment;
 
   constructor() {
-    const nodeEnv = (process.env.NODE_ENV || 'development').toLowerCase();
-    const appEnv = (process.env.REACT_APP_ENV || nodeEnv) as AppEnvironment;
+    const nodeEnv = (this.getEnvVar('NODE_ENV') || 'development').toLowerCase();
+    const appEnv = (this.getEnvVar('REACT_APP_ENV') || this.getEnvVar('VITE_APP_ENV') || nodeEnv) as AppEnvironment;
     
     if (appEnv in ENVIRONMENT_POLICIES) {
       this.currentEnv = appEnv;
     } else {
       this.currentEnv = 'development';
     }
+  }
+
+  /**
+   * Safely retrieves environmental variables across Vite, Webpack, and Node
+   * without triggering uncaught browser ReferenceErrors.
+   */
+  private getEnvVar(key: string): string | undefined {
+    // 1. Safe check for classic Node/Webpack structures
+    if (typeof process !== 'undefined' && process.env) {
+      return process.env[key];
+    }
+    
+    // 2. Safe check for Vite structures
+    try {
+      // @ts-ignore
+      if (import.meta && import.meta.env) {
+        // @ts-ignore
+        return import.meta.env[key] || import.meta.env[`VITE_${key}`];
+      }
+    } catch {
+      // Ignore exceptions in compiling environments missing import.meta
+    }
+
+    return undefined;
   }
 
   public getEnvironment(): AppEnvironment {
