@@ -1,3 +1,4 @@
+/// <reference types="jest" />
 import { transformAxiosError } from '../transformAxiosError';
 import { metricsCollector } from '../metricsCollector';
 import { envConfig } from '../envConfig';
@@ -15,7 +16,7 @@ describe('Platinum API Network Layer Tests', () => {
   let mockStorage: Record<string, string> = {};
 
   beforeAll(() => {
-    Object.defineProperty(global, 'localStorage', {
+    Object.defineProperty(globalThis, 'localStorage', {
       value: {
         getItem: (key: string) => mockStorage[key] || null,
         setItem: (key: string, value: string) => { mockStorage[key] = value; },
@@ -58,7 +59,7 @@ describe('Platinum API Network Layer Tests', () => {
       const result = transformAxiosError(errorPayload);
       expect(result).toBeInstanceOf(ValidationError);
       expect(result.status).toBe(400);
-      expect(result.validationErrors?.email).toContain('Email is invalid');
+      expect((result as ValidationError).validationErrors?.email).toContain('Email is invalid');
     });
 
     it('should map 401 response status to AuthenticationError class', () => {
