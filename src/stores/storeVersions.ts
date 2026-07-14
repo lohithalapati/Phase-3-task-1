@@ -1,0 +1,8 @@
+﻿export const STORE_VERSIONS = {
+  AUTH_STORE: 1,
+  USER_STORE: 1,
+  ORG_STORE: 1,
+  THEME_STORE: 1,
+  SIDEBAR_STORE: 1,
+  SETTINGS_STORE: 1,
+} as const;
