@@ -17,5 +17,6 @@ export { useHydrationStore } from './hydrationStore';
 export { resetCoreSessionStores } from './resetOrchestrator';
 export { storeEventBus } from './storeEventBus';
 export { storeDiagnostics } from './middleware/diagnostics';
+export { ArchitectureBoundaryEnforcer } from './middleware/boundaryEnforcer';
 
 export * from './selectors';
