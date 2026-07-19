@@ -4,18 +4,21 @@
 jest.spyOn(console, "error").mockImplementation(() => {});
 jest.spyOn(console, "warn").mockImplementation(() => {});
 
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => { store[key] = value.toString(); },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; }
-  };
-})();
-
-Object.defineProperty(global, "window", {
-  value: { localStorage: localStorageMock },
-  writable: true,
-  configurable: true
-});
+// Ensure window.localStorage is cleanly defined for JSDOM without wiping the window object
+if (typeof window !== "undefined" && !window.localStorage) {
+  const store: Record<string, string> = {};
+  Object.defineProperty(window, "localStorage", {
+    value: {
+      getItem: (key: string) => store[key] || null,
+      setItem: (key: string, value: string) => { store[key] = value.toString(); },
+      removeItem: (key: string) => { delete store[key]; },
+      clear: () => {
+        for (const key in store) {
+          delete store[key];
+        }
+      }
+    },
+    writable: true,
+    configurable: true
+  });
+}

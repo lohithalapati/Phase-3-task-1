@@ -65,15 +65,18 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
 
   test("triggers validation errors on invalid input", async () => {
     render(<TestFormWrapper onSubmit={jest.fn()} />);
-    const input = screen.getByLabelText("Username");
+    const usernameInput = screen.getByLabelText("Username");
+    const roleSelect = screen.getByLabelText("Role");
 
     await act(async () => {
-      fireEvent.change(input, { target: { value: "ab" } });
-      fireEvent.blur(input);
+      fireEvent.change(usernameInput, { target: { value: "ab" } });
+      fireEvent.blur(usernameInput);
+      fireEvent.change(roleSelect, { target: { value: "" } });
+      fireEvent.blur(roleSelect);
     });
 
-    expect(await screen.findByRole("alert")).toBeInTheDocument();
-    expect(screen.getByText("Too short")).toBeInTheDocument();
+    expect(await screen.findByText("Too short")).toBeInTheDocument();
+    expect(await screen.findByText("Role is required")).toBeInTheDocument();
   });
 
   test("submits form data successfully with valid payload", async () => {
@@ -117,17 +120,21 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
   });
 
   test("persists offline drafts and recovers data on re-mount", async () => {
+    // Pre-populate draft inside LocalStorage to trigger useMemo recovery coverage
+    DraftStore.saveDraft("react-form-domain", 1, { username: "saved_draft_data", role: "admin" });
+
     const { unmount } = render(<TestFormWrapper onSubmit={jest.fn()} enableDrafts={true} />);
     const input = screen.getByLabelText("Username");
+    expect(input).toHaveValue("saved_draft_data");
 
     await act(async () => {
-      fireEvent.change(input, { target: { value: "saved_draft_data" } });
+      fireEvent.change(input, { target: { value: "updated_draft_data" } });
     });
 
     unmount(); // Simulate component unmount
 
     render(<TestFormWrapper onSubmit={jest.fn()} enableDrafts={true} />);
-    expect(screen.getByLabelText("Username")).toHaveValue("saved_draft_data");
+    expect(screen.getByLabelText("Username")).toHaveValue("updated_draft_data");
   });
 
   // --- PLUGINS EXECUTION LOOP ON CHANGE ---
@@ -150,6 +157,57 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
 
     expect(beforeValidateMock).toHaveBeenCalled();
     expect(afterValidateMock).toHaveBeenCalled();
+  });
+
+  test("runs custom plugin that mutates values using getValues and setValue", async () => {
+    const testPlugin: EnterpriseFormPlugin = {
+      name: "mutator-plugin",
+      beforeValidate: (ctx) => {
+        const currentVals = ctx.getValues();
+        if (currentVals.username === "mutate_me") {
+          ctx.setValue("username", "mutated_value");
+        }
+      }
+    };
+
+    render(<TestFormWrapper onSubmit={jest.fn()} plugins={[testPlugin]} />);
+    const input = screen.getByLabelText("Username");
+
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "mutate_me" } });
+    });
+
+    expect(input).toHaveValue("mutated_value");
+  });
+
+  test("calls plugin beforeSubmit and afterSubmit hooks during submission", async () => {
+    const beforeSubmitMock = jest.fn();
+    const afterSubmitMock = jest.fn();
+
+    const testPlugin: EnterpriseFormPlugin = {
+      name: "submit-logger",
+      beforeSubmit: beforeSubmitMock,
+      afterSubmit: afterSubmitMock
+    };
+
+    const submitMock = jest.fn().mockResolvedValue({ status: "success" });
+    render(<TestFormWrapper onSubmit={submitMock} plugins={[testPlugin]} enableDrafts={true} />);
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Username"), { target: { value: "valid_username" } });
+      fireEvent.change(screen.getByLabelText("Role"), { target: { value: "admin" } });
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Submit"));
+    });
+
+    expect(beforeSubmitMock).toHaveBeenCalled();
+    expect(submitMock).toHaveBeenCalled();
+    expect(afterSubmitMock).toHaveBeenCalledWith({ status: "success" });
+
+    // Verify draft cleared after successful submit
+    expect(DraftStore.loadDraft("react-form-domain", 1)).toBeNull();
   });
 
   // --- REGISTRY & MIGRATION EDGE CASES ---
@@ -201,10 +259,11 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
   });
 
   test("DraftStore returns immediately without throwing outside browser environment context", () => {
-    const originalLocalStorage = window.localStorage;
-    Object.defineProperty(window, "localStorage", {
-      value: undefined,
-      writable: true,
+    const originalWindow = global.window;
+
+    // Redefine window to undefined dynamically to force server fallback coverage safely
+    Object.defineProperty(global, "window", {
+      get: () => undefined,
       configurable: true
     });
 
@@ -213,10 +272,10 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(() => DraftStore.clearDraft("any")).not.toThrow();
 
     // Restore environment
-    Object.defineProperty(window, "localStorage", {
-      value: originalLocalStorage,
-      writable: true,
-      configurable: true
+    Object.defineProperty(global, "window", {
+      value: originalWindow,
+      configurable: true,
+      writable: true
     });
   });
 
@@ -237,10 +296,12 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     ];
     const engine = new MultiStepEngine(steps);
 
+    expect(engine.isFirstStep()).toBe(true);
     expect(engine.previous()).toBe(false); // Index bound minimum check
     expect(engine.isLastStep()).toBe(false);
     expect(engine.getSteps()).toEqual(steps);
     expect(engine.getCurrentStepIndex()).toBe(0);
+    expect(engine.getCurrentStep()).toEqual(steps[0]);
 
     const mockValidationFail = jest.fn().mockResolvedValue(false);
     const moved = await engine.next(mockValidationFail);
@@ -249,11 +310,15 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     const mockValidationPass = jest.fn().mockResolvedValue(true);
     const movedSuccess = await engine.next(mockValidationPass);
     expect(movedSuccess).toBe(true);
+    expect(engine.isFirstStep()).toBe(false);
     expect(engine.isLastStep()).toBe(true);
     expect(engine.getProgressPercentage()).toBe(100);
 
     const stepUpLimit = await engine.next(mockValidationPass);
     expect(stepUpLimit).toBe(false); // Blocked at index limit boundary
+
+    expect(engine.previous()).toBe(true); // Move backward successfully
+    expect(engine.isFirstStep()).toBe(true);
   });
 
   // --- DYNAMIC FORM ENGINE SWITCH/CASE BRANCHES ---
@@ -290,6 +355,26 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     await expect(runnerWithEmptyPlugin.executeAfterSubmit({})).resolves.not.toThrow();
   });
 
+  test("PluginRunner invokes submit hooks when configured", async () => {
+    const beforeSubmit = jest.fn();
+    const afterSubmit = jest.fn();
+    const plugin: EnterpriseFormPlugin = {
+      name: "test",
+      beforeSubmit,
+      afterSubmit
+    };
+    const runner = new PluginRunner([plugin], () => ({
+      domain: "test",
+      formState: {},
+      getValues: () => ({}),
+      setValue: jest.fn()
+    }));
+    await runner.executeBeforeSubmit();
+    await runner.executeAfterSubmit({});
+    expect(beforeSubmit).toHaveBeenCalled();
+    expect(afterSubmit).toHaveBeenCalled();
+  });
+
   // --- ERROR PIPELINE CORNER CASES ---
   test("SubmissionPipeline falls back to raw response message mappings when payload is missing error lists", () => {
     const mockGlobalErr = jest.fn();
@@ -304,5 +389,10 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
   test("ErrorMessage returns null when input message is null", () => {
     const { container } = render(<ErrorMessage message={null} />);
     expect(container.firstChild).toBeNull();
+  });
+
+  test("ErrorMessage renders message text cleanly", () => {
+    render(<ErrorMessage message="Direct Server Failure" />);
+    expect(screen.getByText("Direct Server Failure")).toBeInTheDocument();
   });
 });
