@@ -1,4 +1,9 @@
-﻿// Setup local storage mocks for node terminal environments
+﻿import "@testing-library/jest-dom";
+
+// Suppress and mock expected console noise to keep report logs production-clean
+jest.spyOn(console, "error").mockImplementation(() => {});
+jest.spyOn(console, "warn").mockImplementation(() => {});
+
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
@@ -9,7 +14,7 @@ const localStorageMock = (() => {
   };
 })();
 
-Object.defineProperty(global, 'window', {
+Object.defineProperty(global, "window", {
   value: { localStorage: localStorageMock },
   writable: true
 });
