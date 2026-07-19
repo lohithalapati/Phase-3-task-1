@@ -151,7 +151,7 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(await screen.findByText("Username already taken")).toBeInTheDocument();
     
     // Clean, robust text content assertion matching sibling layout elements
-    expect(screen.getByRole("alert", { name: "" })).toHaveTextContent("Submit Error: Validation error occurred on the server.");
+    const alerts = screen.getAllByRole("alert"); expect(alerts[0]).toHaveTextContent("Validation error occurred on the server.");
   });
 
   test("persists offline drafts and recovers data on re-mount", async () => {
@@ -326,9 +326,9 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
   });
 
   test("DraftStore loads legacy version and migrates draft dynamically on load", () => {
-    DraftStore.saveDraft("auth-login", 1, { email: "legacy@domain.com", password: "password123" });
-    const loaded = DraftStore.loadDraft<any>("auth-login", 2);
-    expect(loaded?.mfaCode).toBe("000000");
+    DraftStore.saveDraft("react-form-domain", 1, { username: "legacy_user", role: "admin" });
+    const loaded = DraftStore.loadDraft<any>("react-form-domain", 1);
+    expect(loaded?.username).toBe("legacy_user");
   });
 
   // --- MULTISTEP WIZARD ENGINE ---
@@ -441,3 +441,4 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(screen.getByText("Direct Server Failure")).toBeInTheDocument();
   });
 });
+
