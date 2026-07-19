@@ -1,5 +1,4 @@
-﻿import React from "react";
-import { useEnterpriseForm } from "../core/useEnterpriseForm";
+﻿import { useEnterpriseForm } from "../core/useEnterpriseForm";
 import { FormProvider } from "../controls/FormProvider";
 import { InputField } from "../controls/InputField";
 
