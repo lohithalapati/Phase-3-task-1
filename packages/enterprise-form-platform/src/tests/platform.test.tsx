@@ -5,11 +5,12 @@ import { InputField } from "../controls/InputField";
 import { SelectField } from "../controls/SelectField";
 import { ErrorMessage } from "../controls/ErrorMessage";
 import { SchemaRegistry } from "../schemas/registry";
+import { loginSchemaV1, loginSchemaV2 } from "../schemas/authSchemas";
 import { DraftStore } from "../services/draftStore";
 import { MultiStepEngine } from "../services/multiStepEngine";
 import { DynamicFormEngine } from "../services/dynamicFormEngine";
 import { SubmissionPipeline } from "../core/submissionPipeline";
-import { PluginRunner } from "../services/pluginSystem";
+import { PluginRunner, EnterpriseFormPlugin } from "../services/pluginSystem";
 import { z } from "zod";
 
 // Initialize UI Form schemas
@@ -129,6 +130,28 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(screen.getByLabelText("Username")).toHaveValue("saved_draft_data");
   });
 
+  // --- PLUGINS EXECUTION LOOP ON CHANGE ---
+  test("executes plugins hooks during change and validation cycle", async () => {
+    const beforeValidateMock = jest.fn();
+    const afterValidateMock = jest.fn();
+
+    const mockPlugin: EnterpriseFormPlugin = {
+      name: "validation-logger",
+      beforeValidate: beforeValidateMock,
+      afterValidate: afterValidateMock
+    };
+
+    render(<TestFormWrapper onSubmit={jest.fn()} plugins={[mockPlugin]} />);
+    const input = screen.getByLabelText("Username");
+
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "changing_data" } });
+    });
+
+    expect(beforeValidateMock).toHaveBeenCalled();
+    expect(afterValidateMock).toHaveBeenCalled();
+  });
+
   // --- REGISTRY & MIGRATION EDGE CASES ---
   test("Registry throws on unregistered domains and unmapped migrations", () => {
     const registry = SchemaRegistry.getInstance();
@@ -157,6 +180,17 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(() => registry.migrateData("auth-login-bad", { email: "test" }, 1, 2)).toThrow(/Post-migration validation failed/);
   });
 
+  // --- DOMAIN SCHEMAS EXERCISE (100% COVERAGE FOR AUTH SCHEMAS) ---
+  test("AuthSchemas compile and parse successfully", () => {
+    const legacyValid = loginSchemaV1.safeParse({ email: "v1@enterprise.io", password: "password123" });
+    const legacyInvalid = loginSchemaV1.safeParse({ email: "bad-email", password: "1" });
+    const modernValid = loginSchemaV2.safeParse({ email: "v2@enterprise.io", password: "password123456", mfaCode: "123456" });
+
+    expect(legacyValid.success).toBe(true);
+    expect(legacyInvalid.success).toBe(false);
+    expect(modernValid.success).toBe(true);
+  });
+
   // --- DRAFT STORE FALLBACK BRANCHES ---
   test("DraftStore handles corrupt local storage safely", () => {
     window.localStorage.setItem("ent_draft_v1::corrupt", "{corrupt_json");
@@ -167,17 +201,23 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
   });
 
   test("DraftStore returns immediately without throwing outside browser environment context", () => {
-    const originalWindow = global.window;
-    // @ts-ignore
-    delete global.window;
+    const originalLocalStorage = window.localStorage;
+    Object.defineProperty(window, "localStorage", {
+      value: undefined,
+      writable: true,
+      configurable: true
+    });
 
     expect(() => DraftStore.saveDraft("any", 1, {})).not.toThrow();
     expect(DraftStore.loadDraft("any", 1)).toBeNull();
     expect(() => DraftStore.clearDraft("any")).not.toThrow();
 
     // Restore environment
-    // @ts-ignore
-    global.window = originalWindow;
+    Object.defineProperty(window, "localStorage", {
+      value: originalLocalStorage,
+      writable: true,
+      configurable: true
+    });
   });
 
   test("DraftStore loads and returns identical schema drafts without calling migrations", () => {
@@ -237,7 +277,6 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
 
   // --- PLUGIN SYSTEM COMPLIANCE ---
   test("PluginRunner processes hooks when hooks are undefined in configuration array", async () => {
-    // PASSING "name" PROP TO SATISFY STRCT TS COMPILATION ENVELOPE GATES
     const runnerWithEmptyPlugin = new PluginRunner<any>([{ name: "empty-test-plugin" }], () => ({
       domain: "test",
       formState: {},

@@ -1,6 +1,6 @@
 ﻿import "@testing-library/jest-dom";
 
-// Suppress and mock expected console noise to keep report logs production-clean
+// Suppress expected console warnings and errors during tests to keep logs clean
 jest.spyOn(console, "error").mockImplementation(() => {});
 jest.spyOn(console, "warn").mockImplementation(() => {});
 
@@ -16,5 +16,6 @@ const localStorageMock = (() => {
 
 Object.defineProperty(global, "window", {
   value: { localStorage: localStorageMock },
-  writable: true
+  writable: true,
+  configurable: true
 });
