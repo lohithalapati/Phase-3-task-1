@@ -1,72 +1,49 @@
-﻿import { AppError, ErrorCode } from "../../errors/types/AppError";
-import { EventBus, EventTypes } from "../events/EventBus";
-import { Logger } from "../logging/Logger";
+import { EventBus, EventTypes } from '../events/EventBus';
+import { Logger } from '../logging/Logger';
 
-export interface IRecoveryStrategy {
-  canHandle(error: AppError): boolean;
-  execute(error: AppError): Promise<boolean>;
+export enum RecoveryAction {
+  RETRY = 'RETRY',
+  RELOAD = 'RELOAD',
+  REDIRECT = 'REDIRECT',
+  REAUTHENTICATE = 'REAUTHENTICATE',
+  GO_HOME = 'GO_HOME'
 }
 
-export class ReloadStrategy implements IRecoveryStrategy {
-  public canHandle(error: AppError): boolean {
-    return error.context?.action === "force-reload";
-  }
-
-  public async execute(error: AppError): Promise<boolean> {
-    Logger.warn("[Recovery] Invoking browser hard-reload recovery sequence", { error });
-    window.location.reload();
-    return true;
-  }
-}
-
-export class ReauthenticateStrategy implements IRecoveryStrategy {
-  public canHandle(error: AppError): boolean {
-    return error.code === ErrorCode.UNAUTHORIZED;
-  }
-
-  public async execute(error: AppError): Promise<boolean> {
-    Logger.warn("[Recovery] Detecting auth expiration. Dispatched logouts.", { error });
-    EventBus.publish(EventTypes.AUTH_EXPIRED, { error }, "RecoveryManager");
-    return true;
-  }
-}
-
-class RecoveryEngine {
-  private static instance: RecoveryEngine;
-  private strategies: IRecoveryStrategy[] = [];
-
-  private constructor() {
-    this.registerStrategy(new ReloadStrategy());
-    this.registerStrategy(new ReauthenticateStrategy());
-  }
-
-  public static getInstance(): RecoveryEngine {
-    if (!RecoveryEngine.instance) {
-      RecoveryEngine.instance = new RecoveryEngine();
+export class RecoveryManager {
+  static execute(errorKind: string): void {
+    try {
+      const action = RecoveryManager.resolveAction(errorKind);
+      Logger.info('[Recovery] Recovery transaction fulfilled using: ' + action);
+      RecoveryManager.dispatch(action);
+    } catch (strategyError) {
+      Logger.error('[Recovery] Failure executing strategy', { strategyError });
     }
-    return RecoveryEngine.instance;
   }
 
-  public registerStrategy(strategy: IRecoveryStrategy): void {
-    this.strategies.push(strategy);
+  static handleRecovery(errorKind: string): void {
+    RecoveryManager.execute(errorKind);
   }
 
-  public async handleRecovery(error: AppError): Promise<boolean> {
-    for (const strategy of this.strategies) {
-      if (strategy.canHandle(error)) {
-        try {
-          const success = await strategy.execute(error);
-          if (success) {
-            Logger.info(`[Recovery] Recovery transaction fulfilled using: ${strategy.constructor.name}`);
-            return true;
-          }
-        } catch (strategyError) {
-          Logger.error(`[Recovery] Failure executing strategy ${strategy.constructor.name}`, { strategyError });
-        }
-      }
+  private static resolveAction(kind: string): RecoveryAction {
+    switch (kind) {
+      case 'AUTH':
+        return RecoveryAction.REAUTHENTICATE;
+      case 'NETWORK':
+        return RecoveryAction.RETRY;
+      case 'NOT_FOUND':
+        return RecoveryAction.GO_HOME;
+      default:
+        return RecoveryAction.RELOAD;
     }
-    return false;
+  }
+
+  private static dispatch(action: RecoveryAction): void {
+    if (action === RecoveryAction.REAUTHENTICATE) {
+      EventBus.publish(
+        EventTypes.AUTH_SESSION_EXPIRED,
+        { reason: 'recovery' },
+        'RecoveryManager'
+      );
+    }
   }
 }
-
-export const RecoveryManager = RecoveryEngine.getInstance();

@@ -1,28 +1,31 @@
-﻿import React, { createContext, useContext, useEffect } from "react";
-import { NotificationPipeline } from "../pipeline/NotificationPipeline";
-import { ToastHost } from "../toast/ToastHost";
+﻿import React, { createContext, useContext, ReactNode } from 'react';
 
-interface NotificationContextProps {}
+interface NotificationContextValue {
+  initialized: boolean;
+}
 
-const NotificationContext = createContext<NotificationContextProps | undefined>(undefined);
+const NotificationContext = createContext<NotificationContextValue>({
+  initialized: false
+});
 
-export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  useEffect(() => {
-    NotificationPipeline.initialize();
-  }, []);
+export const useNotification = () => useContext(NotificationContext);
 
+interface NotificationProviderProps {
+  children: ReactNode;
+}
+
+export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   return (
-    <NotificationContext.Provider value={{}}>
-      {children}
-      <ToastHost />
+    <NotificationContext.Provider value={{ initialized: true }}>
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        aria-label="Notification region"
+        role="status"
+        style={{ position: 'relative' }}
+      >
+        {children}
+      </div>
     </NotificationContext.Provider>
   );
-};
-
-export const useNotifications = () => {
-  const context = useContext(NotificationContext);
-  if (context === undefined) {
-    throw new Error("useNotifications must be wrapped inside a global NotificationProvider scope context");
-  }
-  return context;
 };

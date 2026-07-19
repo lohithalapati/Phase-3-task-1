@@ -1,63 +1,66 @@
-﻿import React from "react";
+﻿import React from 'react';
 
 interface ErrorPageProps {
-  title: string;
-  description: string;
-  code: string;
+  onRetry?: () => void;
+  onGoHome?: () => void;
 }
 
-const StaticErrorPageLayout: React.FC<ErrorPageProps> = ({ title, description, code }) => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-6 select-none">
-      <div className="w-full max-w-md text-center">
-        <h1 className="text-8xl font-extrabold text-gray-200 dark:text-gray-800 leading-none mb-4">
-          {code}
-        </h1>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-          {title}
-        </h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
-          {description}
-        </p>
-        <button
-          onClick={() => { window.location.href = "/"; }}
-          className="inline-flex items-center justify-center px-6 py-2.5 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-medium rounded-lg text-sm shadow-sm transition-colors"
-        >
-          Return to Hub
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export const Unauthorized401: React.FC = () => (
-  <StaticErrorPageLayout
-    code="401"
-    title="Authentication Required"
-    description="Your verification sequence has expired or is invalid. Please sign back in to continue access."
-  />
+export const Error401: React.FC<ErrorPageProps> = ({ onGoHome }) => (
+  <div role="alert" aria-label="Unauthorized Error" style={{ textAlign: 'center', padding: '48px' }}>
+    <h1 style={{ fontSize: '48px', fontWeight: 'bold', color: '#ef4444' }}>401</h1>
+    <h2>Unauthorized</h2>
+    <p>You must be logged in to access this resource.</p>
+    <button
+      aria-label="Go to login page"
+      onClick={onGoHome || (() => window.location.href = '/login')}
+      style={{ padding: '10px 24px', cursor: 'pointer' }}
+    >
+      Go to Login
+    </button>
+  </div>
 );
 
-export const Forbidden403: React.FC = () => (
-  <StaticErrorPageLayout
-    code="403"
-    title="Access Prohibited"
-    description="Your security scope credentials do not grant access clearance for this action interface."
-  />
+export const Error403: React.FC<ErrorPageProps> = ({ onGoHome }) => (
+  <div role="alert" aria-label="Forbidden Error" style={{ textAlign: 'center', padding: '48px' }}>
+    <h1 style={{ fontSize: '48px', fontWeight: 'bold', color: '#f97316' }}>403</h1>
+    <h2>Forbidden</h2>
+    <p>You do not have permission to access this resource.</p>
+    <button
+      aria-label="Go to home page"
+      onClick={onGoHome || (() => window.location.href = '/')}
+      style={{ padding: '10px 24px', cursor: 'pointer' }}
+    >
+      Go Home
+    </button>
+  </div>
 );
 
-export const NotFound404: React.FC = () => (
-  <StaticErrorPageLayout
-    code="404"
-    title="Address Not Found"
-    description="The queried system route is absent or has transitioned permanently to a new schema."
-  />
+export const Error404: React.FC<ErrorPageProps> = ({ onGoHome }) => (
+  <div role="alert" aria-label="Not Found Error" style={{ textAlign: 'center', padding: '48px' }}>
+    <h1 style={{ fontSize: '48px', fontWeight: 'bold', color: '#3b82f6' }}>404</h1>
+    <h2>Page Not Found</h2>
+    <p>The page you are looking for does not exist.</p>
+    <button
+      aria-label="Go to home page"
+      onClick={onGoHome || (() => window.location.href = '/')}
+      style={{ padding: '10px 24px', cursor: 'pointer' }}
+    >
+      Go Home
+    </button>
+  </div>
 );
 
-export const ServerError500: React.FC = () => (
-  <StaticErrorPageLayout
-    code="500"
-    title="Internal Crash"
-    description="The platform cluster encountered a runtime execution trap. The systems team has been flagged."
-  />
+export const Error500: React.FC<ErrorPageProps> = ({ onRetry }) => (
+  <div role="alert" aria-label="Server Error" style={{ textAlign: 'center', padding: '48px' }}>
+    <h1 style={{ fontSize: '48px', fontWeight: 'bold', color: '#8b5cf6' }}>500</h1>
+    <h2>Internal Server Error</h2>
+    <p>Something went wrong on our end. Please try again.</p>
+    <button
+      aria-label="Retry the request"
+      onClick={onRetry || (() => window.location.reload())}
+      style={{ padding: '10px 24px', cursor: 'pointer' }}
+    >
+      Try Again
+    </button>
+  </div>
 );

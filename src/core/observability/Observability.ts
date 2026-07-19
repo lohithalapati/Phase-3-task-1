@@ -1,59 +1,41 @@
-﻿import { AppError } from "../../errors/types/AppError";
-import { EventBus, EventTypes } from "../events/EventBus";
+import { EventBus, EventTypes } from '../events/EventBus';
 
 export interface IObservabilityAdapter {
-  trackException(error: AppError): void;
   trackMetric(name: string, value: number, tags?: Record<string, string>): void;
+  trackException(error: Error, context?: Record<string, any>): void;
+  startTrace(spanName: string): () => void;
 }
 
-class ObservabilityManager {
-  private static instance: ObservabilityManager;
-  private adapters: Set<IObservabilityAdapter> = new Set();
-
-  private constructor() {}
-
-  public static getInstance(): ObservabilityManager {
-    if (!ObservabilityManager.instance) {
-      ObservabilityManager.instance = new ObservabilityManager();
-    }
-    return ObservabilityManager.instance;
-  }
-
-  public registerAdapter(adapter: IObservabilityAdapter): void {
-    this.adapters.add(adapter);
-  }
-
-  public trackException(error: AppError): void {
-    this.adapters.forEach((adapter) => {
-      try {
-        adapter.trackException(error);
-      } catch (e) {
-        console.error("[Observability] Adapter trackException failed", e);
-      }
-    });
-
+export class ObservabilityAdapter implements IObservabilityAdapter {
+  trackMetric(name: string, value: number, tags?: Record<string, string>): void {
+    // Abstraction point: Datadog / Azure App Insights / OpenTelemetry
     EventBus.publish(
       EventTypes.TELEMETRY_TRACKED,
-      { type: "EXCEPTION", name: error.name, code: error.code },
-      "ObservabilityManager"
+      { name, value, tags },
+      'ObservabilityAdapter'
     );
   }
 
-  public trackMetric(name: string, value: number, tags?: Record<string, string>): void {
-    this.adapters.forEach((adapter) => {
-      try {
-        adapter.trackMetric(name, value, tags);
-      } catch (e) {
-        console.error("[Observability] Adapter trackMetric failed", e);
-      }
-    });
-
+  trackException(error: Error, context?: Record<string, any>): void {
+    // Abstraction point: Sentry / Datadog / Azure App Insights
     EventBus.publish(
       EventTypes.TELEMETRY_TRACKED,
-      { type: "METRIC", name, value, tags },
-      "ObservabilityManager"
+      { exception: error.message, stack: error.stack, context },
+      'ObservabilityAdapter'
     );
+  }
+
+  startTrace(spanName: string): () => void {
+    const start = Date.now();
+    return () => {
+      const duration = Date.now() - start;
+      EventBus.publish(
+        EventTypes.TELEMETRY_TRACKED,
+        { spanName, duration },
+        'ObservabilityAdapter'
+      );
+    };
   }
 }
 
-export const Observability = ObservabilityManager.getInstance();
+export const Observability = new ObservabilityAdapter();

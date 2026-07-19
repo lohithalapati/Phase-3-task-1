@@ -1,52 +1,34 @@
-﻿import { EventBus, EventTypes } from "../../core/events/EventBus";
-import { Logger } from "../../core/logging/Logger";
-import { Observability } from "../../core/observability/Observability";
-import { RecoveryManager } from "../../core/recovery/RecoveryManager";
-import { ErrorMapper } from "../mapper/ErrorMapper";
-import { AppError } from "../types/AppError";
+import { Logger } from '../../core/logging/Logger';
+import { Observability } from '../../core/observability/Observability';
+import { RecoveryManager } from '../../core/recovery/RecoveryManager';
+import { EventBus, EventTypes } from '../../core/events/EventBus';
+import { ErrorMapper } from '../mapper/ErrorMapper';
+import { AppError } from '../types/AppError';
 
-class CoreErrorPipeline {
-  private static instance: CoreErrorPipeline;
+export class ErrorPipeline {
+  static handle(raw: any, source?: string): AppError {
+    // Step 1: Map raw error to AppError
+    const appError: AppError = ErrorMapper.map(raw);
 
-  private constructor() {}
-
-  public static getInstance(): CoreErrorPipeline {
-    if (!CoreErrorPipeline.instance) {
-      CoreErrorPipeline.instance = new CoreErrorPipeline();
-    }
-    return CoreErrorPipeline.instance;
-  }
-
-  public async handle(rawError: unknown, source: string): Promise<AppError> {
-    const appError = ErrorMapper.map(rawError);
-
-    // 1. Unified Logging
-    Logger.error(`[ErrorPipeline] Unhandled failure trapped: ${appError.message}`, {
-      code: appError.code,
-      kind: appError.kind,
-      source,
-      context: appError.context,
-    });
-
-    // 2. Telemetry & Observability
-    Observability.trackException(appError);
-
-    // 3. Dynamic Recovery execution
-    const recovered = await RecoveryManager.handleRecovery(appError);
-
-    // 4. Publish to Core System EventBus
-    EventBus.publish(
-      EventTypes.SYSTEM_ERROR,
-      {
-        error: appError,
-        recovered,
-        source,
-      },
-      source
+    // Step 2: Log
+    Logger.error(
+      '[ErrorPipeline] Unhandled failure trapped: ' + appError.code,
+      { source, kind: appError.kind, message: appError.message }
     );
+
+    // Step 3: Observe (track exception via abstraction layer)
+    if (raw instanceof Error) {
+      Observability.trackException(raw, { source, code: appError.code });
+    } else {
+      Observability.trackMetric('error_occurred', 1, { kind: appError.kind });
+    }
+
+    // Step 4: Recover
+    RecoveryManager.handleRecovery(appError.kind);
+
+    // Step 5: Emit to EventBus for Notification Pipeline (Task 9)
+    EventBus.publish(EventTypes.SYSTEM_ERROR, appError, source || 'ErrorPipeline');
 
     return appError;
   }
 }
-
-export const ErrorPipeline = CoreErrorPipeline.getInstance();

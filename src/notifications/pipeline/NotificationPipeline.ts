@@ -1,67 +1,36 @@
-﻿import { EventBus, EventTypes, PlatformEvent } from "../../core/events/EventBus";
-import { AppError } from "../../errors/types/AppError";
-import { NotificationChannel, NotificationItem, NotificationPriority, NotificationState } from "../types/Notification";
-import { ChannelRouter } from "../channels/ChannelRouter";
+import { EventBus, EventTypes } from '../../core/events/EventBus';
+import { AppError } from '../../errors/types/AppError';
+import { NotificationItem } from '../types/Notification';
 
-class CoreNotificationPipeline {
-  private static instance: CoreNotificationPipeline;
+export class NotificationPipeline {
+  private static unsubscribers: Array<() => void> = [];
 
-  private constructor() {}
-
-  public static getInstance(): CoreNotificationPipeline {
-    if (!CoreNotificationPipeline.instance) {
-      CoreNotificationPipeline.instance = new CoreNotificationPipeline();
-    }
-    return CoreNotificationPipeline.instance;
-  }
-
-  public initialize(): void {
-    // Explicitly pass generic types to avoid fallback to PlatformEvent<unknown>
-    EventBus.subscribe<{ error: AppError; recovered: boolean }>(
-      EventTypes.SYSTEM_ERROR, 
-      (event) => this.handleSystemError(event)
+  static initialize(): void {
+    // Subscribe to system errors (payload is AppError directly)
+    const unsubError = EventBus.subscribe<AppError>(
+      EventTypes.SYSTEM_ERROR,
+      (error) => NotificationPipeline.handleSystemError(error)
     );
-    
-    EventBus.subscribe<Partial<NotificationItem>>(
-      EventTypes.NOTIFICATION_DISPATCH, 
-      (event) => this.handleDirectDispatch(event)
+
+    // Subscribe to direct notification dispatches
+    const unsubNotif = EventBus.subscribe<Partial<NotificationItem>>(
+      EventTypes.NOTIFICATION_DISPATCH,
+      (item) => NotificationPipeline.handleDirectDispatch(item)
     );
+
+    NotificationPipeline.unsubscribers.push(unsubError, unsubNotif);
   }
 
-  private handleSystemError(event: PlatformEvent<{ error: AppError; recovered: boolean }>): void {
-    const { error, recovered } = event.payload;
-
-    const notification: NotificationItem = {
-      id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
-      title: `System Alert: ${error.code}`,
-      message: error.message,
-      priority: error.kind === "FATAL" ? NotificationPriority.CRITICAL : NotificationPriority.HIGH,
-      channels: [NotificationChannel.TOAST, NotificationChannel.IN_APP],
-      state: NotificationState.UNREAD,
-      timestamp: Date.now(),
-      metadata: { source: event.source, recovered },
-    };
-
-    ChannelRouter.route(notification);
+  static destroy(): void {
+    NotificationPipeline.unsubscribers.forEach(unsub => unsub());
+    NotificationPipeline.unsubscribers = [];
   }
 
-  private handleDirectDispatch(event: PlatformEvent<Partial<NotificationItem>>): void {
-    const raw = event.payload;
+  private static handleSystemError(error: AppError): void {
+    console.info('[NotificationPipeline] System error received:', error.message);
+  }
 
-    const notification: NotificationItem = {
-      id: raw.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15)),
-      title: raw.title || "Message Update",
-      message: raw.message || "",
-      priority: raw.priority || NotificationPriority.NORMAL,
-      channels: raw.channels || [NotificationChannel.TOAST, NotificationChannel.IN_APP],
-      state: raw.state || NotificationState.UNREAD,
-      timestamp: Date.now(),
-      metadata: raw.metadata,
-      duration: raw.duration,
-    };
-
-    ChannelRouter.route(notification);
+  private static handleDirectDispatch(item: Partial<NotificationItem>): void {
+    console.info('[NotificationPipeline] Direct dispatch received:', item.title);
   }
 }
-
-export const NotificationPipeline = CoreNotificationPipeline.getInstance();

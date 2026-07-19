@@ -1,75 +1,73 @@
-﻿export interface PlatformEvent<T = any> {
+// ===========================================================================
+// EventBus — Core Event-Driven Communication Layer
+// NeuralHandoff V5 — Phase 3 Batch 2
+// ===========================================================================
+
+export type EventCallback<T = any> = (payload: T) => void;
+
+// ---------------------------------------------------------------------------
+// Event Types Registry (Versioned)
+// ---------------------------------------------------------------------------
+export const EventTypes = {
+  SYSTEM_ERROR:            'system.error.v1',
+  NOTIFICATION_DISPATCH:   'notification.dispatch.v1',
+  AUDIT_ACTION:            'audit.action.v1',
+  AUTH_LOGOUT:             'auth.logout.v1',
+  AUTH_SESSION_EXPIRED:    'auth.session.expired.v1',
+  AUTH_EXPIRED:            'auth.expired.v1',
+  DOMAIN_EVENT:            'domain.event.v1',
+  TELEMETRY_TRACKED:       'telemetry.tracked.v1'
+} as const;
+
+export type EventType = typeof EventTypes[keyof typeof EventTypes];
+
+// ---------------------------------------------------------------------------
+// Platform Event Envelope
+// ---------------------------------------------------------------------------
+export interface PlatformEvent<T = any> {
   id: string;
-  type: string;
-  timestamp: number;
+  type: EventType | string;
   payload: T;
-  source: string;
+  source?: string;
+  timestamp: number;
+  version: string;
 }
 
-export type EventCallback<T = any> = (event: PlatformEvent<T>) => void;
+// ---------------------------------------------------------------------------
+// IEventBus Interface
+// ---------------------------------------------------------------------------
+export interface IEventBus {
+  publish<T>(type: string, payload: T, source?: string): void;
+  subscribe<T>(type: string, callback: (payload: T) => void): () => void;
+  clear(): void;
+}
 
-class EventBusService {
-  private static instance: EventBusService;
-  private listeners: Map<string, Set<EventCallback>> = new Map();
+// ---------------------------------------------------------------------------
+// EventBusImpl — Singleton Implementation
+// ---------------------------------------------------------------------------
+export class EventBusImpl implements IEventBus {
+  private listeners = new Map<string, Array<EventCallback<any>>>();
 
-  private constructor() {}
-
-  public static getInstance(): EventBusService {
-    if (!EventBusService.instance) {
-      EventBusService.instance = new EventBusService();
-    }
-    return EventBusService.instance;
+  public publish<T>(type: string, payload: T, source?: string): void {
+    const callbacks = this.listeners.get(type) || [];
+    callbacks.forEach(cb => {
+      try {
+        cb(payload);
+      } catch (err) {
+        console.error('[EventBus] Callback crash for event:', type, 'source:', source, err);
+      }
+    });
   }
 
-  public publish<T>(type: string, payload: T, source: string): PlatformEvent<T> {
-    const event: PlatformEvent<T> = {
-      id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
-      type,
-      timestamp: Date.now(),
-      payload,
-      source,
-    };
-
-    const targets = this.listeners.get(type);
-    if (targets) {
-      targets.forEach((callback) => {
-        try {
-          callback(event);
-        } catch (err) {
-          console.error(`[EventBus] Callback crash for event: ${type}`, err);
-        }
-      });
-    }
-
-    // Catch-all system-wide wildcard listeners
-    const wildcardTargets = this.listeners.get("*");
-    if (wildcardTargets) {
-      wildcardTargets.forEach((callback) => {
-        try {
-          callback(event);
-        } catch (err) {
-          console.error(`[EventBus] Wildcard crash for event: ${type}`, err);
-        }
-      });
-    }
-
-    return event;
-  }
-
-  public subscribe<T>(type: string, callback: EventCallback<T>): () => void {
+  public subscribe<T>(type: string, callback: (payload: T) => void): () => void {
     if (!this.listeners.has(type)) {
-      this.listeners.set(type, new Set());
+      this.listeners.set(type, []);
     }
-    this.listeners.get(type)!.add(callback);
+    this.listeners.get(type)!.push(callback as EventCallback<any>);
 
     return () => {
-      const targets = this.listeners.get(type);
-      if (targets) {
-        targets.delete(callback);
-        if (targets.size === 0) {
-          this.listeners.delete(type);
-        }
-      }
+      const existing = this.listeners.get(type) || [];
+      this.listeners.set(type, existing.filter(cb => cb !== callback));
     };
   }
 
@@ -78,11 +76,4 @@ class EventBusService {
   }
 }
 
-export const EventBus = EventBusService.getInstance();
-
-export const EventTypes = {
-  SYSTEM_ERROR: "SYSTEM:ERROR",
-  TELEMETRY_TRACKED: "TELEMETRY:TRACKED",
-  NOTIFICATION_DISPATCH: "NOTIFICATION:DISPATCH",
-  AUTH_EXPIRED: "AUTH:EXPIRED",
-} as const;
+export const EventBus = new EventBusImpl();
