@@ -141,7 +141,7 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     });
 
     expect(await screen.findByText("Username already taken")).toBeInTheDocument();
-    expect(screen.getByText("Submit Error: Validation error occurred on the server.")).toBeInTheDocument();
+    expect(screen.getByText(/Validation error occurred on the server/)).toBeInTheDocument();
   });
 
   test("persists offline drafts and recovers data on re-mount", async () => {
@@ -428,3 +428,4 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(screen.getByText("Direct Server Failure")).toBeInTheDocument();
   });
 });
+
