@@ -1,0 +1,10 @@
+﻿{
+    "timestamp":  "2026-07-19 20:22:32",
+    "critical":  0,
+    "high":  1,
+    "moderate":  4,
+    "low":  0,
+    "secretsFound":  false,
+    "gitignoreOk":  true,
+    "envFileSafe":  true
+}

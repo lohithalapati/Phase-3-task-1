@@ -1,4 +1,8 @@
-﻿name: CI Pipeline
+﻿Write-Host "Setting up GitHub Actions CI Pipeline..." -ForegroundColor Cyan
+New-Item -ItemType Directory -Path ".github/workflows" -Force | Out-Null
+
+$ciWorkflow = @"
+name: CI Pipeline
 
 on:
   push:
@@ -18,7 +22,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: `${{ matrix.node-version }}
           cache: npm
       - name: Install dependencies
         run: npm ci
@@ -40,3 +44,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run security audit
         run: npm audit --audit-level=high
+"@
+
+$ciWorkflow | Out-File -FilePath ".github/workflows/ci.yml" -Encoding UTF8
+Write-Host "Created .github/workflows/ci.yml" -ForegroundColor Green
