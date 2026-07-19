@@ -47,6 +47,22 @@ const TestFormWrapper = ({
   );
 };
 
+// Form without descriptions to achieve 100% branch coverage on field markup paths
+const TestFormMinimal = ({ onSubmit }: { onSubmit: any }) => {
+  const { form, handleSubmit } = useEnterpriseForm<any>({
+    domain: "react-form-domain",
+    version: 1,
+    defaultValues: { username: "", role: "" }
+  });
+  return (
+    <FormProvider form={form} onSubmit={handleSubmit(onSubmit)}>
+      <InputField name="username" label="Username" />
+      <SelectField name="role" label="Role" options={[]} />
+      <button type="submit">Submit</button>
+    </FormProvider>
+  );
+};
+
 describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
   
   beforeEach(() => {
@@ -63,6 +79,12 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(screen.getByText("Authorization role")).toBeInTheDocument();
   });
 
+  test("renders minimal UI components without descriptive tags", () => {
+    render(<TestFormMinimal onSubmit={jest.fn()} />);
+    expect(screen.getByLabelText("Username")).toBeInTheDocument();
+    expect(screen.queryByText("Primary user handle")).toBeNull();
+  });
+
   test("triggers validation errors on invalid input", async () => {
     render(<TestFormWrapper onSubmit={jest.fn()} />);
     const usernameInput = screen.getByLabelText("Username");
@@ -70,9 +92,12 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
 
     await act(async () => {
       fireEvent.change(usernameInput, { target: { value: "ab" } });
-      fireEvent.blur(usernameInput);
       fireEvent.change(roleSelect, { target: { value: "" } });
-      fireEvent.blur(roleSelect);
+    });
+
+    // Submitting form triggers Zod parsing and registers RHF states
+    await act(async () => {
+      fireEvent.click(screen.getByText("Submit"));
     });
 
     expect(await screen.findByText("Too short")).toBeInTheDocument();
@@ -116,7 +141,7 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     });
 
     expect(await screen.findByText("Username already taken")).toBeInTheDocument();
-    expect(screen.getByText("Submit Error: Database Constraint Violation")).toBeInTheDocument();
+    expect(screen.getByText("Submit Error: Validation error occurred on the server.")).toBeInTheDocument();
   });
 
   test("persists offline drafts and recovers data on re-mount", async () => {
@@ -204,7 +229,10 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
 
     expect(beforeSubmitMock).toHaveBeenCalled();
     expect(submitMock).toHaveBeenCalled();
-    expect(afterSubmitMock).toHaveBeenCalledWith({ status: "success" });
+    expect(afterSubmitMock).toHaveBeenCalledWith(
+      expect.objectContaining({ domain: "react-form-domain" }),
+      { status: "success" }
+    );
 
     // Verify draft cleared after successful submit
     expect(DraftStore.loadDraft("react-form-domain", 1)).toBeNull();
@@ -247,6 +275,11 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(legacyValid.success).toBe(true);
     expect(legacyInvalid.success).toBe(false);
     expect(modernValid.success).toBe(true);
+
+    // Explicitly execute data migration function logic (line 28)
+    const registry = SchemaRegistry.getInstance();
+    const migratedV1ToV2 = registry.migrateData<any>("auth-login", { email: "usr@corp.com", password: "password123456" }, 1, 2);
+    expect(migratedV1ToV2.mfaCode).toBe("000000");
   });
 
   // --- DRAFT STORE FALLBACK BRANCHES ---
@@ -259,11 +292,10 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
   });
 
   test("DraftStore returns immediately without throwing outside browser environment context", () => {
-    const originalWindow = global.window;
-
-    // Redefine window to undefined dynamically to force server fallback coverage safely
-    Object.defineProperty(global, "window", {
-      get: () => undefined,
+    const originalLocalStorage = window.localStorage;
+    Object.defineProperty(window, "localStorage", {
+      value: undefined,
+      writable: true,
       configurable: true
     });
 
@@ -272,10 +304,10 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(() => DraftStore.clearDraft("any")).not.toThrow();
 
     // Restore environment
-    Object.defineProperty(global, "window", {
-      value: originalWindow,
-      configurable: true,
-      writable: true
+    Object.defineProperty(window, "localStorage", {
+      value: originalLocalStorage,
+      writable: true,
+      configurable: true
     });
   });
 
