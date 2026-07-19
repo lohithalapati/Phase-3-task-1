@@ -13,7 +13,6 @@ import { SubmissionPipeline } from "../core/submissionPipeline";
 import { PluginRunner, EnterpriseFormPlugin } from "../services/pluginSystem";
 import { z } from "zod";
 
-// Initialize UI Form schemas
 const reactFormSchema = z.object({
   username: z.string().min(3, "Too short"),
   role: z.string().min(1, "Role is required")
@@ -33,6 +32,7 @@ const TestFormWrapper = ({
     domain: "react-form-domain",
     version: 1,
     defaultValues: { username: "", role: "" },
+    mode: "onChange",
     plugins,
     enableDrafts
   });
@@ -47,12 +47,12 @@ const TestFormWrapper = ({
   );
 };
 
-// Form without descriptions to achieve 100% branch coverage on field markup paths
 const TestFormMinimal = ({ onSubmit }: { onSubmit: any }) => {
   const { form, handleSubmit } = useEnterpriseForm<any>({
     domain: "react-form-domain",
     version: 1,
-    defaultValues: { username: "", role: "" }
+    defaultValues: { username: "", role: "" },
+    mode: "onChange"
   });
   return (
     <FormProvider form={form} onSubmit={handleSubmit(onSubmit)}>
@@ -92,16 +92,24 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
 
     await act(async () => {
       fireEvent.change(usernameInput, { target: { value: "ab" } });
+      fireEvent.blur(usernameInput);
       fireEvent.change(roleSelect, { target: { value: "" } });
-    });
-
-    // Submitting form triggers Zod parsing and registers RHF states
-    await act(async () => {
-      fireEvent.click(screen.getByText("Submit"));
+      fireEvent.blur(roleSelect);
     });
 
     expect(await screen.findByText("Too short")).toBeInTheDocument();
     expect(await screen.findByText("Role is required")).toBeInTheDocument();
+  });
+
+  test("triggers validation errors on invalid input in minimal form (desc=false, error=true branch)", async () => {
+    render(<TestFormMinimal onSubmit={jest.fn()} />);
+    const usernameInput = screen.getByLabelText("Username");
+
+    await act(async () => {
+      fireEvent.change(usernameInput, { target: { value: "ab" } });
+    });
+
+    expect(await screen.findByText("Too short")).toBeInTheDocument();
   });
 
   test("submits form data successfully with valid payload", async () => {
@@ -141,11 +149,12 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     });
 
     expect(await screen.findByText("Username already taken")).toBeInTheDocument();
-    expect(screen.getByText(/Validation error occurred on the server/)).toBeInTheDocument();
+    
+    // Clean, robust text content assertion matching sibling layout elements
+    expect(screen.getByRole("alert", { name: "" })).toHaveTextContent("Submit Error: Validation error occurred on the server.");
   });
 
   test("persists offline drafts and recovers data on re-mount", async () => {
-    // Pre-populate draft inside LocalStorage to trigger useMemo recovery coverage
     DraftStore.saveDraft("react-form-domain", 1, { username: "saved_draft_data", role: "admin" });
 
     const { unmount } = render(<TestFormWrapper onSubmit={jest.fn()} enableDrafts={true} />);
@@ -156,7 +165,7 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
       fireEvent.change(input, { target: { value: "updated_draft_data" } });
     });
 
-    unmount(); // Simulate component unmount
+    unmount(); // Unmount component
 
     render(<TestFormWrapper onSubmit={jest.fn()} enableDrafts={true} />);
     expect(screen.getByLabelText("Username")).toHaveValue("updated_draft_data");
@@ -234,7 +243,7 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
       { status: "success" }
     );
 
-    // Verify draft cleared after successful submit
+    // Verify draft is cleanly cleared after successful submit
     expect(DraftStore.loadDraft("react-form-domain", 1)).toBeNull();
   });
 
@@ -276,7 +285,6 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(legacyInvalid.success).toBe(false);
     expect(modernValid.success).toBe(true);
 
-    // Explicitly execute data migration function logic (line 28)
     const registry = SchemaRegistry.getInstance();
     const migratedV1ToV2 = registry.migrateData<any>("auth-login", { email: "usr@corp.com", password: "password123456" }, 1, 2);
     expect(migratedV1ToV2.mfaCode).toBe("000000");
@@ -303,7 +311,6 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(DraftStore.loadDraft("any", 1)).toBeNull();
     expect(() => DraftStore.clearDraft("any")).not.toThrow();
 
-    // Restore environment
     Object.defineProperty(window, "localStorage", {
       value: originalLocalStorage,
       writable: true,
@@ -318,6 +325,12 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(loaded).toEqual(draftPayload);
   });
 
+  test("DraftStore loads legacy version and migrates draft dynamically on load", () => {
+    DraftStore.saveDraft("auth-login", 1, { email: "legacy@domain.com", password: "password123" });
+    const loaded = DraftStore.loadDraft<any>("auth-login", 2);
+    expect(loaded?.mfaCode).toBe("000000");
+  });
+
   // --- MULTISTEP WIZARD ENGINE ---
   test("MultiStepEngine enforces configuration boundaries and validation results", async () => {
     expect(() => new MultiStepEngine([])).toThrow(/zero steps/);
@@ -329,7 +342,7 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     const engine = new MultiStepEngine(steps);
 
     expect(engine.isFirstStep()).toBe(true);
-    expect(engine.previous()).toBe(false); // Index bound minimum check
+    expect(engine.previous()).toBe(false);
     expect(engine.isLastStep()).toBe(false);
     expect(engine.getSteps()).toEqual(steps);
     expect(engine.getCurrentStepIndex()).toBe(0);
@@ -337,7 +350,7 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
 
     const mockValidationFail = jest.fn().mockResolvedValue(false);
     const moved = await engine.next(mockValidationFail);
-    expect(moved).toBe(false); // Blocked when validation fails
+    expect(moved).toBe(false);
 
     const mockValidationPass = jest.fn().mockResolvedValue(true);
     const movedSuccess = await engine.next(mockValidationPass);
@@ -347,9 +360,9 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(engine.getProgressPercentage()).toBe(100);
 
     const stepUpLimit = await engine.next(mockValidationPass);
-    expect(stepUpLimit).toBe(false); // Blocked at index limit boundary
+    expect(stepUpLimit).toBe(false);
 
-    expect(engine.previous()).toBe(true); // Move backward successfully
+    expect(engine.previous()).toBe(true);
     expect(engine.isFirstStep()).toBe(true);
   });
 
@@ -428,4 +441,3 @@ describe("Enterprise Form Platform - Full Quality Alignment Suite", () => {
     expect(screen.getByText("Direct Server Failure")).toBeInTheDocument();
   });
 });
-

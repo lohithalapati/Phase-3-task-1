@@ -30,11 +30,10 @@ export function useEnterpriseForm<TFieldValues extends FieldValues>({
 }: UseEnterpriseFormOptions<TFieldValues>): UseEnterpriseFormReturn<TFieldValues> {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [isSubmittingInternal, setIsSubmittingInternal] = useState(false);
+  const isSubmitCompletedRef = useRef(false);
 
-  // Retrieve versioned schema from system schema registry
   const schema = useMemo(() => SchemaRegistry.getInstance().getSchema(domain, version), [domain, version]);
 
-  // Try loading structural system draft values if applicable
   const defaultValues = useMemo(() => {
     if (enableDrafts) {
       const draft = DraftStore.loadDraft<TFieldValues>(domain, version);
@@ -52,7 +51,6 @@ export function useEnterpriseForm<TFieldValues extends FieldValues>({
   const { watch, getValues, setValue, setError, formState } = form;
   const currentValues = watch();
 
-  // Initialize and execute standard form plugins lifecycle configuration
   const pluginRunner = useMemo(() => {
     return new PluginRunner<TFieldValues>(plugins, () => ({
       domain,
@@ -62,7 +60,6 @@ export function useEnterpriseForm<TFieldValues extends FieldValues>({
     }));
   }, [domain, plugins, formState, getValues, setValue]);
 
-  // Hook validation checks to plugin lifecycle execution loop
   const prevIsValid = useRef(formState.isValid);
   useEffect(() => {
     pluginRunner.executeBeforeValidate();
@@ -70,12 +67,12 @@ export function useEnterpriseForm<TFieldValues extends FieldValues>({
     prevIsValid.current = formState.isValid;
   }, [currentValues, formState.isValid, pluginRunner]);
 
-  // Track state changes to preserve active offline draft entries
+  // Prevent draft saving when submission has already completed or is in progress
   useEffect(() => {
-    if (enableDrafts && Object.keys(currentValues).length > 0) {
+    if (enableDrafts && Object.keys(currentValues).length > 0 && !formState.isSubmitting && !isSubmitCompletedRef.current) {
       DraftStore.saveDraft(domain, version, currentValues);
     }
-  }, [currentValues, domain, version, enableDrafts]);
+  }, [currentValues, domain, version, enableDrafts, formState.isSubmitting]);
 
   const handleSubmit = (onSubmit: (data: TFieldValues) => Promise<any> | any) => {
     return form.handleSubmit(async (data: TFieldValues) => {
@@ -86,6 +83,7 @@ export function useEnterpriseForm<TFieldValues extends FieldValues>({
         const response = await onSubmit(data);
         await pluginRunner.executeAfterSubmit(response);
         if (enableDrafts) {
+          isSubmitCompletedRef.current = true;
           DraftStore.clearDraft(domain);
         }
       } catch (err: any) {
