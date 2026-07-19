@@ -10,5 +10,6 @@ export const resetCoreSessionStores = () => {
   useAuthStore.getState().clearCredentials();
   useUserStore.getState().clearUser();
   useOrgStore.getState().clearOrg();
-  storeEventBus.publish('AUTH_LOGOUT');
+  storeEventBus.publish('AUTH_LOGOUT', undefined as any);
 };
+

@@ -10,7 +10,7 @@ export const useOrgStore = createEnterpriseStore<OrgState>(
     availableOrgs: [],
     setCurrentOrg: (org) => {
       set({ currentOrg: org }, false, 'org/setCurrentOrg');
-      storeEventBus.publish('WORKSPACE_CHANGED', org);
+      storeEventBus.publish('WORKSPACE_CHANGED', org as any);
     },
     setAvailableOrgs: (orgs) =>
       set({ availableOrgs: orgs }, false, 'org/setAvailableOrgs'),
@@ -31,3 +31,4 @@ export const useOrgStore = createEnterpriseStore<OrgState>(
     },
   }
 );
+

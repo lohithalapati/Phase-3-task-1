@@ -18,17 +18,18 @@ const loggerImpl: LoggerImpl = (f, name) => (set, get, store) => {
   const loggedSet: typeof set = (...args) => {
     if (process.env.NODE_ENV !== 'production') {
       const prevState = get();
-      set(...args);
+      (set as any)(...args);
       const nextState = get();
       console.groupCollapsed(`%cZUSTAND Action: [${name || 'Store'}]`, 'color: #3b82f6; font-weight: bold;');
       console.log('%cPrev State:', 'color: #9e9e9e; font-weight: bold;', prevState);
       console.log('%cNext State:', 'color: #4caf50; font-weight: bold;', nextState);
       console.groupEnd();
     } else {
-      set(...args);
+      (set as any)(...args);
     }
   };
   return f(loggedSet, get, store);
 };
 
 export const logger = loggerImpl as unknown as Logger;
+

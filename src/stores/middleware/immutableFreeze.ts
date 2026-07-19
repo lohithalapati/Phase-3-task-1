@@ -23,11 +23,13 @@ export const immutableFreeze = <
 >(
   f: StateCreator<T, Mps, Mcs>
 ): StateCreator<T, Mps, Mcs> => (set, get, store) => {
-  const frozenSet: typeof set = (...args) => {
-    set(...args);
+  const frozenSet: any = (...args: any[]) => {
+    (set as any)(...args);
     if (process.env.NODE_ENV !== 'production') {
       deepFreeze(get());
     }
   };
   return f(frozenSet, get, store);
 };
+
+

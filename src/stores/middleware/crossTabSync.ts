@@ -47,7 +47,7 @@ const crossTabSyncImpl: CrossTabSyncImpl = (f, storeName) => (set, get, store) =
   });
 
   const syncedSet: typeof set = (nextStateOrUpdater, replace) => {
-    set(nextStateOrUpdater, replace);
+    set(nextStateOrUpdater, replace as any);
     const nextState = get();
     
     const serializableSlice: Record<string, any> = {};
@@ -73,3 +73,4 @@ const crossTabSyncImpl: CrossTabSyncImpl = (f, storeName) => (set, get, store) =
 };
 
 export const crossTabSync = crossTabSyncImpl as unknown as CrossTabSync;
+

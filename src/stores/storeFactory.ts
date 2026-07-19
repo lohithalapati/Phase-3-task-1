@@ -32,10 +32,10 @@ export const createEnterpriseStore = <T extends object>(
     subscribeWithSelector(
       (set, get, store) => {
         const instrumentedSet: typeof set = (...args) => {
-          set(...args);
+          (set as any)(...args);
           storeDiagnostics.recordUpdate(options.name, get());
         };
-        return middlewareStack(instrumentedSet, get, store);
+        return middlewareStack(instrumentedSet as any, get as any, store as any);
       }
     ),
     { name: options.name }
@@ -52,7 +52,7 @@ export const createEnterpriseStore = <T extends object>(
   // 5. Schema Persistence Bridge
   if (options.persistType && options.persistType !== 'none') {
     const startHydration = typeof performance !== 'undefined' ? performance.now() : Date.now();
-    decoratedCreator = persist(decoratedCreator, {
+    decoratedCreator = persist(decoratedCreator as any, {
       name: `ent-${options.name}-state`,
       storage: createJSONStorage(() => createSafeStorage(options.persistType === 'session' ? 'session' : 'local')),
       version: options.version ?? 0,
@@ -70,3 +70,6 @@ export const createEnterpriseStore = <T extends object>(
 
   return create<T>()(decoratedCreator as any);
 };
+
+
+
