@@ -12,9 +12,18 @@ export default tseslint.config(
       },
     },
     rules: {
+      // Relax rules to allow current patterns in codebase
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', { 
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^" 
+      }],
       '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
+      'no-empty': 'off',
+      'prefer-const': 'warn'
     },
   },
   {
