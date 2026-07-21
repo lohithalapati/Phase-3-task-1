@@ -1,0 +1,46 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "NeuralHandoff V5 Enterprise Core Networking API Specifications",
+    "version": "5.0.0",
+    "description": "Contracts, models, and header validations for the NeuralHandoff transport architecture."
+  },
+  "servers": [
+    {
+      "url": "https://api.neuralhandoff.com/v1",
+      "description": "Enterprise API Gateway Core"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Authenticate user credentials",
+        "responses": {
+          "200": {
+            "description": "User successfully logged in"
+          }
+        }
+      }
+    },
+    "/auth/refresh-token": {
+      "post": {
+        "summary": "Silent lease rotation",
+        "responses": {
+          "200": {
+            "description": "JWT tokens rotated"
+          }
+        }
+      }
+    },
+    "/projects": {
+      "get": {
+        "summary": "Retrieve paginated project schemas",
+        "responses": {
+          "200": {
+            "description": "Projects successfully fetched"
+          }
+        }
+      }
+    }
+  }
+}

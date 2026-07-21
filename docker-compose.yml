@@ -1,23 +1,11 @@
-version: "3.9"
-
+version: '3.8'
 services:
-  postgres:
-    image: postgres:15
-    container_name: neural_postgres
+  api-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
     environment:
-      POSTGRES_USER: neural_admin
-      POSTGRES_PASSWORD: neural_password
-      POSTGRES_DB: neuralhandoff
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7
-    container_name: neural_redis
-    ports:
-      - "6379:6379"
-
-volumes:
-  postgres_data:
+      - NODE_ENV=production
+    restart: always

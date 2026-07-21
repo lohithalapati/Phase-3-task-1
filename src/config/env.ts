@@ -1,5 +1,26 @@
-﻿export const ENV = {
-  API_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-  APP_ENV: import.meta.env.VITE_APP_ENV || 'development',
-  ENABLE_MOCK_API: import.meta.env.VITE_ENABLE_MOCK_API === 'true',
-} as const;
+﻿import { Environment } from './types';
+
+export class EnvReader {
+  static get(key: string, fallback?: string): string {
+    const globalCtx = typeof window !== 'undefined' ? window : globalThis;
+    const processEnv = (globalCtx as any).process?.env || {};
+    const importMetaEnv = (globalCtx as any).import?.meta?.env || {};
+    const runtimeConfig = (globalCtx as any).__NH_CONFIG__ || {};
+
+    const resolved = runtimeConfig[key] || processEnv[key] || importMetaEnv[key];
+    if (resolved === undefined || resolved === null || resolved === '') {
+      if (fallback !== undefined) return fallback;
+      throw new Error(`CRITICAL SYSTEM FAILURE: Required variable environment [${key}] is undefined.`);
+    }
+    return String(resolved);
+  }
+
+  static getEnvironment(): Environment {
+    const target = EnvReader.get('NODE_ENV', 'development').toLowerCase();
+    if (target.startsWith('dev')) return 'development';
+    if (target.startsWith('test')) return 'test';
+    if (target.startsWith('stag')) return 'staging';
+    if (target.startsWith('prod')) return 'production';
+    return 'development';
+  }
+}

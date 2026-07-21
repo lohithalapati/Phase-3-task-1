@@ -1,0 +1,13 @@
+export type ErrorCategory =
+  | 'BAD_REQUEST'
+  | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
+  | 'NOT_FOUND'
+  | 'CONFLICT'
+  | 'VALIDATION_ERROR'
+  | 'TOO_MANY_REQUESTS'
+  | 'SERVER_ERROR'
+  | 'NETWORK_ERROR'
+  | 'TIMEOUT_ERROR'
+  | 'CANCELED'
+  | 'UNKNOWN';

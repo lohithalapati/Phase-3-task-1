@@ -1,0 +1,3 @@
+export const DEFAULT_MAX_RETRIES = 3;
+export const DEFAULT_RETRY_BASE_DELAY_MS = 1000;
+export const DEFAULT_RETRY_MAX_DELAY_MS = 5000;

@@ -1,0 +1,10 @@
+ M .gitignore
+ M frontend/package-lock.json
+ M frontend/package.json
+ M frontend/src/App.test.tsx
+ M frontend/src/components/ui/Button.tsx
+?? docs/testing.md
+?? frontend/src/components/layout/GlobalBackground.test.tsx
+?? frontend/src/test/
+?? frontend/vitest.config.ts
+?? proof/

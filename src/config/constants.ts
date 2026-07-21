@@ -1,0 +1,8 @@
+﻿export const CONFIG_CONSTANTS = {
+  DEFAULT_LOCALE: 'en-US',
+  FALLBACK_LOCALE: 'en-US',
+  API_VERSION: 'v1',
+  LOCAL_STORAGE_PREFIX: 'nh_enterprise_v5_',
+  SESSION_TIMEOUT_DEFAULT: 1800000,
+  DEFAULT_MAX_LIMIT: 100,
+} as const;
