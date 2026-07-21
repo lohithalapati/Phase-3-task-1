@@ -27,3 +27,6 @@ coverage.info
 *.lcov
 
 logs/*.log
+
+frontend/coverage/
+frontend/dist/
